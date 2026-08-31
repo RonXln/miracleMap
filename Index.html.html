@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>奇绩创坛 · 京沪深孵化器/园区生态地图</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg:#ffffff; --surface:#f4f6f9; --surface2:#eceff3;
+  --text:#1a1d21; --text-secondary:#5b6570; --line:#e2e6ec;
+  --accent:#2563eb;
+  --qiji:#1d4ed8;           /* 奇绩蓝 */
+  --key:#e4572e;            /* 重点 橙红 */
+  --normal:#8a94a6;         /* 普通 灰 */
+  --normal-pin:rgba(90,100,116,.62);   /* 普通牌子 灰半透明 */
+  --normal-txt:#ffffff;
+  --normal-line:rgba(255,255,255,.55);
+  --panel-bg:rgba(255,255,255,.96);
+  --shadow:0 4px 20px rgba(20,30,50,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#1a1c1f; --surface:#22262b; --surface2:#2b3037;
+    --text:#e8eaed; --text-secondary:#9aa4b0; --line:#333941;
+    --accent:#5b8dff;
+    --qiji:#5b8dff; --key:#ff7a52; --normal:#7a8698; --normal-pin:rgba(120,132,150,.55); --normal-txt:#f0f2f5; --normal-line:rgba(255,255,255,.4);
+    --panel-bg:rgba(30,34,39,.96);
+    --shadow:0 4px 22px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1a1c1f; --surface:#22262b; --surface2:#2b3037;
+  --text:#e8eaed; --text-secondary:#9aa4b0; --line:#333941;
+  --accent:#5b8dff; --qiji:#5b8dff; --key:#ff7a52; --normal:#7a8698; --normal-pin:rgba(120,132,150,.55); --normal-txt:#f0f2f5; --normal-line:rgba(255,255,255,.4);
+  --panel-bg:rgba(30,34,39,.96); --shadow:0 4px 22px rgba(0,0,0,.5);
+}
+:root[data-theme="light"]{
+  --bg:#ffffff; --surface:#f4f6f9; --surface2:#eceff3;
+  --text:#1a1d21; --text-secondary:#5b6570; --line:#e2e6ec;
+  --accent:#2563eb; --qiji:#1d4ed8; --key:#e4572e; --normal:#8a94a6; --normal-pin:rgba(90,100,116,.62); --normal-txt:#ffffff; --normal-line:rgba(255,255,255,.55);
+  --panel-bg:rgba(255,255,255,.96); --shadow:0 4px 20px rgba(20,30,50,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC","PingFang SC",sans-serif;
+  overflow:hidden;
+}
+#app{position:relative;width:100vw;height:100vh;}
+#map{width:100%;height:100%;}
+
+/* 顶部标题条 */
+#topbar{
+  position:absolute;top:12px;left:12px;z-index:20;
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  background:var(--panel-bg);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:12px;
+  padding:10px 14px;box-shadow:var(--shadow);max-width:calc(100vw - 340px);
+}
+#topbar h1{font-size:15px;margin:0;font-weight:700;letter-spacing:.3px;}
+#topbar .sub{font-size:11px;color:var(--text-secondary);margin-top:1px;}
+.city-tabs{display:flex;gap:6px;}
+.city-tabs button{
+  font:inherit;font-size:13px;font-weight:600;cursor:pointer;
+  padding:6px 16px;border-radius:8px;border:1px solid var(--line);
+  background:var(--surface);color:var(--text-secondary);transition:.15s;
+}
+.city-tabs button:hover{background:var(--surface2);}
+.city-tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* 图例（自定义，替代高德原生） */
+#legend{
+  position:absolute;left:12px;bottom:16px;z-index:20;
+  background:var(--panel-bg);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:12px;padding:12px 14px;
+  box-shadow:var(--shadow);font-size:12px;line-height:1.9;max-width:230px;
+}
+#legend .lg-title{font-weight:700;margin-bottom:6px;font-size:12px;}
+#legend .row{display:flex;align-items:center;gap:8px;color:var(--text-secondary);}
+.dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);}
+.dot.qiji{background:var(--qiji);border-radius:2px;transform:rotate(45deg);}
+.star-ico{color:var(--qiji);font-size:15px;}
+.dot.key{background:var(--key);}
+.dot.normal{background:var(--normal);width:10px;height:10px;}
+.tag-lg{width:22px;height:14px;border-radius:7px;flex:0 0 auto;display:inline-block;}
+.tag-lg.key{background:var(--key);border:1px solid rgba(255,255,255,.6);}
+.tag-lg.normal{background:var(--normal-pin);border:1px solid var(--normal-line);}
+#legend .hint{margin-top:8px;font-size:11px;color:var(--text-secondary);border-top:1px dashed var(--line);padding-top:6px;}
+
+/* 右侧信息面板 */
+#panel{
+  position:absolute;top:12px;right:12px;bottom:16px;z-index:20;width:310px;
+  background:var(--panel-bg);backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#panel .ph{padding:12px 16px;border-bottom:1px solid var(--line);}
+#panel .ph .pt{font-size:14px;font-weight:700;}
+#panel .ph .pd{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+#panel .pbody{overflow-y:auto;padding:6px 0;flex:1;}
+.card{padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:.12s;}
+.card:hover{background:var(--surface);}
+.card.sel{background:var(--surface2);}
+.card .cn{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;}
+.badge{font-size:10px;padding:1px 7px;border-radius:20px;color:#fff;font-weight:600;flex:0 0 auto;}
+.badge.qiji{background:var(--qiji);}
+.badge.key{background:var(--key);}
+.badge.normal{background:var(--normal);}
+.tag{font-size:10px;color:var(--text-secondary);border:1px solid var(--line);padding:0 6px;border-radius:6px;}
+.card .meta{font-size:11px;color:var(--text-secondary);margin-top:4px;line-height:1.55;}
+.card .meta b{color:var(--text);font-weight:600;}
+.stat{display:flex;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:11px;color:var(--text-secondary);flex-wrap:wrap;}
+.stat span b{color:var(--text);font-size:13px;}
+
+/* 详情弹层内文字（infoWindow） */
+.iw{font-family:inherit;max-width:280px;}
+.iw .iw-h{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;color:#1a1d21;}
+.iw .iw-row{font-size:12px;line-height:1.6;margin:3px 0;color:#3a4048;}
+.iw .iw-row b{color:#1a1d21;}
+.iw .iw-tag{display:inline-block;font-size:10px;padding:1px 7px;border-radius:20px;color:#fff;margin-right:4px;}
+
+/* 地图上的常驻标签 marker */
+.mk{transform:translate(-50%,-100%);cursor:pointer;white-space:nowrap;user-select:none;}
+.mk .pin{display:flex;align-items:center;gap:4px;padding:3px 8px 3px 6px;border-radius:16px;
+  font-size:12px;font-weight:600;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.25);border:1.5px solid rgba(255,255,255,.85);}
+.mk.qiji .pin{background:var(--qiji);font-size:13px;}
+.mk.key .pin{background:var(--key);}
+.mk.normal .pin{background:var(--normal-pin);color:var(--normal-txt);backdrop-filter:blur(2px);
+  font-weight:500;font-size:11px;border:1px solid var(--normal-line);box-shadow:0 1px 4px rgba(0,0,0,.18);}
+.mk.normal .ic{opacity:.8;}
+.mk.normal .arrow{color:var(--normal-pin);}
+.mk .ic{font-size:12px;line-height:1;}
+.mk.qiji .ic{font-size:13px;}
+.mk .arrow{position:absolute;left:50%;top:100%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:currentColor;}
+.mk.key .arrow{color:var(--key);}
+.mk.qiji .arrow{color:var(--qiji);}
+
+@media (max-width:820px){
+  #panel{width:210px;}
+  #topbar{max-width:calc(100vw - 240px);}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+
+  <div id="topbar">
+    <div>
+      <h1>奇绩创坛 · 京沪深孵化器/园区生态地图</h1>
+      <div class="sub">物理载体 · 园区/孵化器/加速器/OPC社区　|　数据来源：奇绩创坛调研文档（2026.8）</div>
+    </div>
+    <div class="city-tabs" id="cityTabs">
+      <button data-city="北京">北京</button>
+      <button data-city="上海">上海</button>
+      <button data-city="深圳">深圳</button>
+    </div>
+  </div>
+
+  <div id="legend">
+    <div class="lg-title">图例</div>
+    <div class="row"><span class="star-ico">★</span> 奇绩创坛（本部/中心）</div>
+    <div class="row"><span class="tag-lg key"></span> 重点载体（奇绩关注方向）</div>
+    <div class="row"><span class="tag-lg normal"></span> 其它孵化器/园区</div>
+    <div class="hint">点击地图标记或右侧卡片查看详情。重点方向：机器人/具身智能、AI Agent、大模型、硬科技、芯片。</div>
+  </div>
+
+  <div id="panel">
+    <div class="ph">
+      <div class="pt" id="panelTitle">北京</div>
+      <div class="pd" id="panelDesc"></div>
+    </div>
+    <div class="stat" id="panelStat"></div>
+    <div class="pbody" id="panelBody"></div>
+  </div>
+</div>
+
+<script>
+window._AMapSecurityConfig={securityJsCode:"bdf1048239ad701d93bf5ba9df61822a"};
+</script>
+<script src="https://webapi.amap.com/loader.js"></script>
+<script>
+const RAW = [{"city": "北京", "name": "奇绩创坛", "cat": "奇绩", "level": 0, "lng": 116.329611, "lat": 39.992317, "area": "海淀区成府路150号（清华园三才堂7号）", "operator": "陆奇创办，前YC中国", "focus": "AI Agent/具身智能/机器人/大模型/硬科技/芯片", "scale": "国家级卓越级孵化器，每年全球万余项目筛选近百个", "contact": "010-56683772", "activity": "春秋两季路演日、创业营、Office Hour", "contacted": "本部", "coop": "—", "geo_src": "anchor", "website": "https://www.miracleplus.com"}, {"city": "上海", "name": "奇绩创坛中心", "cat": "奇绩", "level": 0, "lng": 121.399975, "lat": 31.161958, "area": "徐汇区漕河泾开发区（漕宝路漕河泾印象城）", "operator": "奇绩创坛上海中心", "focus": "AI/具身智能/科学智能，源头创新+投资+孵化", "scale": "已吸引超60家企业落地，40家产品出海；硕博占比超70%", "contact": "—", "activity": "大咖分享日、产品日", "contacted": "本部", "coop": "—", "geo_src": "anchor", "website": ""}, {"city": "北京", "name": "北航天汇", "cat": "孵化器", "level": 1, "lng": 116.365015, "lat": 39.972537, "area": "海淀区学院路", "operator": "北航天汇科技孵化器有限公司（高校）", "focus": "AI/高校成果转化", "scale": "累计培育1200+高新企业，22家上市", "contact": "010-82319898", "activity": "概念验证+持股孵化项目", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "中科创星硬科技孵化器", "cat": "孵化器", "level": 1, "lng": 116.130261, "lat": 39.896232, "area": "海淀区", "operator": "北京中科创星科技有限公司（中科院系）", "focus": "集成电路/AI/硬科技", "scale": "管理基金超170亿元，投资孵化590+家", "contact": "010-62421674", "activity": "硬科技冠军企业创业营", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.casstar.com.cn"}, {"city": "北京", "name": "巢生（巢生实验室）", "cat": "孵化器", "level": 1, "lng": 116.370824, "lat": 40.042549, "area": "海淀区", "operator": "巢生源科（北京）科技管理有限公司（外资/民营）", "focus": "合成生物/细胞基因治疗/再生医学", "scale": "服务企业逾70家", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.nestbio.net"}, {"city": "北京", "name": "创新工场", "cat": "孵化器", "level": 1, "lng": 116.314409, "lat": 39.984511, "area": "海淀区海淀大街3号鼎好DH3大厦A座", "operator": "李开复2009年创立（民营）", "focus": "AI/硬科技/机器人/医疗科技", "scale": "投资400+企业，多家上市+独角兽", "contact": "010-57525200", "activity": "DeeCamp训练营", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.chuangxin.com"}, {"city": "北京", "name": "巢生", "cat": "孵化器", "level": 1, "lng": 116.370824, "lat": 40.042549, "area": "海淀区", "operator": "同上（卓越级）", "focus": "合成生物/再生医学", "scale": "—", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.nestbio.net"}, {"city": "北京", "name": "中科创星", "cat": "孵化器", "level": 1, "lng": 116.363098, "lat": 40.001712, "area": "海淀区", "operator": "同上（卓越级）", "focus": "光电子/集成电路/硬科技", "scale": "—", "contact": "010-62421674", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.casstar.com.cn"}, {"city": "北京", "name": "新生巢生物医药孵化器", "cat": "孵化器", "level": 1, "lng": 116.271561, "lat": 40.105228, "area": "昌平", "operator": "", "focus": "生命健康、新药研发", "scale": "", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "poi", "website": "https://www.bio2.com.cn"}, {"city": "北京", "name": "启迪之星", "cat": "孵化器", "level": 1, "lng": 116.330624, "lat": 39.99367, "area": "海淀区中关村东路1号院8号", "operator": "启迪控股（清华系/混合）", "focus": "综合（AI/双碳/国际化）", "scale": "全球207个节点，92万㎡，累计孵化24000+企业，51家上市", "contact": "400-150-0019", "activity": "创业训练营/技术交流会", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.tusstar.com"}, {"city": "北京", "name": "联想之星", "cat": "孵化器", "level": 1, "lng": 116.30664, "lat": 39.98362, "area": "海淀区海淀西大街39号四层", "operator": "联想控股2008年创立（民营）", "focus": "TMT/医疗健康/AI/智能机器", "scale": "管理基金约50亿元，投资400+项目，15家上市+15家独角兽", "contact": "010-82982599；yubo@legendstar.com.cn", "activity": "CEO特训班", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.legendstar.cn"}, {"city": "北京", "name": "北京中发展智源人工智能科技发展有限公司", "cat": "孵化器", "level": 1, "lng": 116.44439, "lat": 40.020947, "area": "", "operator": "", "focus": "人工智能", "scale": "", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "智源研究院\"出奇智胜\"计划", "cat": "孵化器", "level": 1, "lng": 116.314424, "lat": 39.984553, "area": "海淀区", "operator": "北京智源人工智能研究院BAAI（混合）", "focus": "AI初创公司孵化", "scale": "面向A轮前AI企业+高校科研团队", "contact": "李军 lijun@baai.ac.cn", "activity": "研究支持+投融资对接", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.baai.ac.cn"}, {"city": "北京", "name": "智源创芯硬科技孵化器", "cat": "孵化器", "level": 1, "lng": 116.130261, "lat": 39.896232, "area": "", "operator": "", "focus": "门头沟，2024年认定市级，AI芯片/硬科技", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "参加活动", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "海淀AI原点社区", "cat": "园区", "level": 1, "lng": 116.334173, "lat": 39.994622, "area": "", "operator": "", "focus": "四大AI街区核心，五道口，340+家AI企业，清华+北大+中科院生态", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "平台级合作/联合活动", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "朝阳光智空间创新街区", "cat": "园区", "level": 1, "lng": 116.443136, "lat": 39.921444, "area": "", "operator": "", "focus": "四大AI街区，酒仙桥，2.67km²，八大园区，2680家科企", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "平台级合作/联合活动", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "中关村（海淀）具身智能创新产业园", "cat": "园区", "level": 1, "lng": 116.365598, "lat": 40.003396, "area": "", "operator": "", "focus": "全国首家，海淀北沙滩，25.4万㎡，39家企业入驻", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "项目互推/联合路演", "geo_src": "manual", "website": ""}, {"city": "北京", "name": "经开区E9区创新工场", "cat": "孵化器", "level": 1, "lng": 116.596039, "lat": 39.884753, "area": "", "operator": "", "focus": "经开区，文化创意+科技", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "参加活动", "geo_src": "poi", "website": "http://www.e9quchuangxin.cn"}, {"city": "北京", "name": "智友人工智能与机器人孵化器", "cat": "孵化器", "level": 1, "lng": 116.339975, "lat": 39.936275, "area": "海淀区", "operator": "中关村智友天使人工智能与机器人研究院（民营）", "focus": "AI/机器人/航空航天", "scale": "\"科学家基金\"模式", "contact": "—", "activity": "科学家项目路演", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "新生巢创新中心", "cat": "孵化器", "level": 2, "lng": 116.271561, "lat": 40.105228, "area": "昌平区生命科学园", "operator": "混合", "focus": "生物医药/AI", "scale": "3.2万㎡，入驻44家企业；与赛默飞共建4000㎡共享实验平台", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.bio2.com.cn"}, {"city": "北京", "name": "谷仓智能硬件孵化器", "cat": "园区", "level": 1, "lng": 116.332404, "lat": 39.842266, "area": "丰台区花乡青旅科创园", "operator": "谷仓（洪华博士，民营）", "focus": "AIoT/智能家居/智慧医疗/机器人", "scale": "服务百余家IoT企业", "contact": "17200475486", "activity": "硬件创业加速营", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.igucang.com"}, {"city": "北京", "name": "中关村通力科幻元宇宙孵化器", "cat": "孵化器", "level": 2, "lng": 116.31862, "lat": 39.980047, "area": "石景山区首钢园", "operator": "北京中关村通力科技服务有限责任公司（混合）", "focus": "AI/现实交互/光学/游戏/IP", "scale": "孵化科幻相关企业", "contact": "—", "activity": "科幻产业路演", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "http://www.metaversecenter.cn"}, {"city": "北京", "name": "怀柔仪器和传感器硬科技孵化器", "cat": "孵化器", "level": 1, "lng": 116.130261, "lat": 39.896232, "area": "怀柔区", "operator": "怀柔科学城管委会（国资）", "focus": "仪器/传感器/精密测量", "scale": "—", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "璞跃中国（Plug and Play）", "cat": "加速器", "level": 1, "lng": 116.334736, "lat": 39.993533, "area": "海淀区五道口", "operator": "Plug and Play（外资）", "focus": "硬科技/AI大模型/智能硬件/商用机器人", "scale": "北京投资近60个项目，融资超7亿；独角兽4家；国高新50+；专精特新20+", "contact": "—", "activity": "120天孵化计划/大企业对接", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.pnpchina.com"}, {"city": "北京", "name": "中关村创业大街", "cat": "孵化器", "level": 1, "lng": 116.306835, "lat": 39.983767, "area": "海淀区海淀西大街48号", "operator": "中关村创业大街科技服务有限公司（混合）", "focus": "综合/AI/开源芯片", "scale": "全球创新创业风向标；含智源大厦、全球创新社区", "contact": "—", "activity": "持续性创业活动", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.z-innoway.com"}, {"city": "北京", "name": "碳力加速器", "cat": "加速器", "level": 2, "lng": 116.34003, "lat": 39.937979, "area": "昌平区未来科学城", "operator": "混合", "focus": "AI/新材料/双碳", "scale": "服务百家企业，合作基金投资5000万+", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.tanlitech.com"}, {"city": "北京", "name": "创客总部", "cat": "孵化器", "level": 1, "lng": 116.306968, "lat": 39.983231, "area": "海淀区中关村创业大街", "operator": "北大校友+联想之星联盟（民营）", "focus": "硬科技/实验室成果转化", "scale": "投资30万-1000万", "contact": "—", "activity": "创业辅导+路演", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "中关村科学城", "cat": "园区", "level": 1, "lng": 116.305138, "lat": 39.982382, "area": "海淀区全域", "operator": "中关村科学城管委会（国资）", "focus": "AI大模型/量子科技/具身智能/集成电路", "scale": "原始创新策源地", "contact": "010-68410552", "activity": "中关村国际前沿科技大赛", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://kw.beijing.gov.cn"}, {"city": "北京", "name": "亦庄经济技术开发区", "cat": "园区", "level": 1, "lng": 116.506622, "lat": 39.795275, "area": "大兴/通州", "operator": "经开区管委会（国资）", "focus": "新一代信息技术/新能源汽车/生物医药/机器人", "scale": "35家孵化器，67万㎡；3000家硬科技企业；AI算力7000P+", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://kfqgw.beijing.gov.cn"}, {"city": "北京", "name": "顺义创新产业集群示范区", "cat": "孵化器", "level": 1, "lng": 116.330079, "lat": 39.835352, "area": "顺义区", "operator": "国资", "focus": "第三代半导体/智能新能源汽车/航空航天", "scale": "20.5km²；100亿产业基金；承接\"三城\"成果140项/年", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "石景山首钢园", "cat": "园区", "level": 2, "lng": 116.155232, "lat": 39.915415, "area": "石景山区", "operator": "首钢集团（国资）", "focus": "科幻/元宇宙/AI/冬奥遗产", "scale": "800家科幻企业，产业规模480亿元", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.shougang.com.cn"}, {"city": "北京", "name": "中关村软件园", "cat": "园区", "level": 2, "lng": 116.292904, "lat": 40.047665, "area": "海淀区东北旺", "operator": "中关村软件园发展有限公司（混合）", "focus": "软件/AI/云计算", "scale": "23000+㎡孵化空间", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "http://www.zpark.com.cn"}, {"city": "北京", "name": "中关村软件园孵化器", "cat": "孵化器", "level": 2, "lng": 116.296642, "lat": 40.050837, "area": "海淀区东北旺", "operator": "北京中关村软件园孵化服务有限公司（国资）", "focus": "软件/AI", "scale": "23011㎡", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "http://www.zpark.com.cn"}, {"city": "北京", "name": "东升科技园孵化器", "cat": "园区", "level": 2, "lng": 116.357106, "lat": 40.045677, "area": "海淀区西小口路66号", "operator": "北京东升博展科技发展有限公司（民营）", "focus": "综合/AI", "scale": "47900㎡", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "http://innoecos.cn"}, {"city": "北京", "name": "中关村通力科技孵化器", "cat": "孵化器", "level": 2, "lng": 116.341852, "lat": 39.927849, "area": "石景山区首钢园", "operator": "中关村通力（混合）", "focus": "科幻/元宇宙/AI", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "http://www.metaversecenter.cn"}, {"city": "北京", "name": "顺义科技企业孵化器", "cat": "孵化器", "level": 1, "lng": 116.642122, "lat": 40.102967, "area": "顺义区", "operator": "国资", "focus": "第三代半导体/智能汽车", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "大族启航孵化器", "cat": "孵化器", "level": 2, "lng": 116.500059, "lat": 39.975695, "area": "经开区", "operator": "大族集团（民营）", "focus": "智能制造/激光", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "星地（朝阳）OPC开源创业社区", "cat": "OPC", "level": 2, "lng": 116.502808, "lat": 39.98603, "area": "酒仙桥北路乙十号院星地中心", "operator": "民营", "focus": "开放AI工具矩阵", "scale": "—", "contact": "肖广鑫 15611211150", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "光智工坊OPC社区", "cat": "OPC", "level": 2, "lng": 116.490939, "lat": 39.982556, "area": "酒仙桥路6号工业AI产业园5号楼", "operator": "360安全+AI赋能（民营）", "focus": "AI安全", "scale": "—", "contact": "曾晶 13810806764", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "极客部落·AI应用生态园", "cat": "孵化器", "level": 2, "lng": 116.484115, "lat": 39.9922, "area": "望京街10号院联络大厦4层", "operator": "民营", "focus": "AI应用", "scale": "约1700㎡；2年免费工位", "contact": "尹晓铁 15801097796", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "首创郎园OPC超新星社区", "cat": "OPC", "level": 2, "lng": 116.51618, "lat": 39.967603, "area": "通惠河北路郎家园6号/东坝半截塔路53号", "operator": "首创集团（国资）", "focus": "AIGC视听", "scale": "5000+㎡", "contact": "马进 13810307571", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "AI Space产业园", "cat": "园区", "level": 1, "lng": 116.483558, "lat": 40.00691, "area": "望京东路1号望京数字创意园1号楼A座", "operator": "民营", "focus": "具身智能测试平台", "scale": "—", "contact": "卢浩 13662056422", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "比高东郎AI影视产业园", "cat": "园区", "level": 2, "lng": 116.47363, "lat": 39.906917, "area": "建国门外郎家园10号", "operator": "民营", "focus": "AI影视", "scale": "约50000㎡；首批1000工位", "contact": "晨阳 18655208885", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "锦上·AI OPC创业孵化平台", "cat": "OPC", "level": 2, "lng": 116.415458, "lat": 40.016664, "area": "仰山公园1号楼", "operator": "民营", "focus": "AI创业", "scale": "免费AI工具+200门课程", "contact": "钱小琳 13911855266", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "OneX AI社区", "cat": "园区", "level": 1, "lng": 116.334783, "lat": 39.993553, "area": "朝阳路28号管庄·OneX AI创业者空间", "operator": "民营", "focus": "MVP开发+Agent工作流", "scale": "—", "contact": "袁伟 13011192672", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "模数OPC社区（WaytoAGI）", "cat": "OPC", "level": 1, "lng": 116.577144, "lat": 39.786148, "area": "经开区", "operator": "民营", "focus": "AI原生创新", "scale": "超4万㎡OPC专业空间（全区）", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.waytoagi.com"}, {"city": "北京", "name": "AI未来电影研究院", "cat": "孵化器", "level": 2, "lng": 116.524014, "lat": 39.812077, "area": "经开区", "operator": "民营", "focus": "AIGC创意", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "亦智谷OPC社区", "cat": "OPC", "level": 1, "lng": 116.408915, "lat": 39.952121, "area": "经开区", "operator": "民营", "focus": "智能硬件科技", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "启迪大街亦庄人工智能联合创新中心", "cat": "孵化器", "level": 1, "lng": 116.579813, "lat": 39.787291, "area": "经开区", "operator": "启迪控股（混合）", "focus": "AI原生创新", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.tusstar.com"}, {"city": "北京", "name": "中国（北京）高新视听产业园OPC社区", "cat": "OPC", "level": 2, "lng": 116.651387, "lat": 39.884039, "area": "经开区", "operator": "国资", "focus": "AIGC创意", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "国际AI科创人才培养中心", "cat": "孵化器", "level": 1, "lng": 116.65941, "lat": 40.100463, "area": "经开区", "operator": "国资", "focus": "AI原生创新", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "上地OPC创新街区", "cat": "OPC", "level": 2, "lng": 116.303276, "lat": 40.035542, "area": "海淀区上地", "operator": "海淀区政府（国资）", "focus": "全市首个AI OPC创新街区", "scale": "全周期管家式服务+UPSIDE OS平台", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "中关村AI北纬社区", "cat": "园区", "level": 2, "lng": 116.224856, "lat": 40.085792, "area": "海淀区", "operator": "市科委支持（国资）", "focus": "AI+新材料/可控核聚变/AI决策", "scale": "全国首支AI领域孵化培育型创新基金，已孵化4家，总融资超亿元", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "OPC生态服务联盟（氪星创服）", "cat": "OPC", "level": 2, "lng": 116.408915, "lat": 39.952121, "area": "海淀区", "operator": "氪星创服主办（民营）", "focus": "综合AI", "scale": "算力优惠包+模型优惠包+场景推荐", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "北京", "name": "ATLATL飞镖创新研发中心", "cat": "孵化器", "level": 2, "lng": 116.278036, "lat": 40.091438, "area": "昌平区生命科学园", "operator": "大得创同（外资/民营）", "focus": "生物医药（细胞基因治疗/核酸）", "scale": "国际标准研发中心", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.atlatl.center"}, {"city": "北京", "name": "ATLATL飞镖创新中心", "cat": "加速器", "level": 2, "lng": 116.301791, "lat": 39.821288, "area": "昌平区生命科学园", "operator": "大得创同（外资）", "focus": "细胞基因治疗/核酸/基因编辑", "scale": "工信部卓越级", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.atlatl.center"}, {"city": "北京", "name": "真格基金", "cat": "孵化器", "level": 2, "lng": 116.407387, "lat": 39.904179, "area": "海淀区", "operator": "徐小平、王强2011年联合红杉创立（民营）", "focus": "综合", "scale": "鼓励青年人创业创新", "contact": "www.zhenfund.com", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.zhenfund.com"}, {"city": "北京", "name": "氪星创服（原氪空间）", "cat": "孵化器", "level": 2, "lng": 116.464973, "lat": 39.900515, "area": "海淀区", "operator": "36氪系（民营）", "focus": "综合", "scale": "累计孵化260+项目，融资总额50亿+", "contact": "—", "activity": "OPC生态服务联盟活动", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.krspace.com"}, {"city": "北京", "name": "黑马数字孪生孵化器", "cat": "孵化器", "level": 2, "lng": 116.341852, "lat": 39.927849, "area": "通州区副中心", "operator": "创业黑马（民营/上市）", "focus": "数字经济/数字孪生", "scale": "累计孵化57家，招引39家企业注册", "contact": "—", "activity": "黑马营/创业大赛", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.cyhm.com"}, {"city": "北京", "name": "AA加速器", "cat": "加速器", "level": 2, "lng": 116.407387, "lat": 39.904179, "area": "海淀区", "operator": "民营", "focus": "综合/早期", "scale": "—", "contact": "—", "activity": "加速营", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "北京", "name": "中关村量子科技孵化器", "cat": "孵化器", "level": 2, "lng": 116.364628, "lat": 39.903641, "area": "海淀区", "operator": "光子盒创始人顾成建（民营）", "focus": "量子计算/量子通信/量子测量", "scale": "全国首家；一年孵化15家企业", "contact": "—", "activity": "量子产业路演", "contacted": "❌ 未接触", "coop": "", "geo_src": "manual", "website": ""}, {"city": "北京", "name": "中关村生命科学园", "cat": "园区", "level": 2, "lng": 116.31862, "lat": 39.980047, "area": "昌平区", "operator": "国资", "focus": "生物医药", "scale": "600+企业，300+高端人才，21位院士", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://lifesciencepark.com.cn"}, {"city": "上海", "name": "模速空间", "cat": "孵化器", "level": 1, "lng": 121.460834, "lat": 31.158831, "area": "徐汇滨江", "operator": "上海大模型生态发展有限公司（国资）", "focus": "AI/大模型", "scale": "5万㎡，300+大模型企业，带动1700+AI企业", "contact": "董事长杨晶晶", "activity": "有", "contacted": "✅ 已接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "中科创星（上海）", "cat": "孵化器", "level": 1, "lng": 121.605205, "lat": 31.178659, "area": "浦东", "operator": "中科创星（混合/中科院系）", "focus": "光电量子/硬科技", "scale": "先导基金26.17亿，已孵化570+企业", "contact": "010-62421674", "activity": "硬科技冠军企业创业营", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.casstar.com.cn"}, {"city": "上海", "name": "\"大零号湾\"科创策源孵化器", "cat": "孵化器", "level": 1, "lng": 121.423825, "lat": 31.025125, "area": "闵行", "operator": "交大+闵行区（高校/国资）", "focus": "电子信息/先进装备", "scale": "—", "contact": "—", "activity": "—", "contacted": "✅ 苏一", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "张江高科895孵化器", "cat": "孵化器", "level": 1, "lng": 121.586521, "lat": 31.186149, "area": "浦东张江", "operator": "张江高科600895全资（国资/上市公司）", "focus": "集成电路/AI/生物医药/航天", "scale": "累计1400+企业，创业营12季入营357家", "contact": "021-38959000；zjhh-bp@600895.com", "activity": "895创业营（每季垂直行业专场）", "contacted": "✅ jy", "coop": "", "geo_src": "geocode", "website": "https://www.600895.com"}, {"city": "上海", "name": "InnoSpace创智空间", "cat": "加速器", "level": 1, "lng": 121.513635, "lat": 31.306184, "area": "杨浦区淞沪路270号/316号创智天地", "operator": "民营", "focus": "TMT、智能制造、新消费", "scale": "累计孵化500+企业", "contact": "021-65107878-815；hr@innospace.com.cn", "activity": "国际创业集训营", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "http://www.ispace.com.cn"}, {"city": "上海", "name": "模力社区/模力·源孵化器", "cat": "园区", "level": 1, "lng": 121.682188, "lat": 31.251645, "area": "浦东张江科学城", "operator": "浦东新区推动（国资）", "focus": "垂类大模型应用", "scale": "总面积20万㎡，核心区6.1万㎡，200+垂类大模型企业；\"模力·源\"孵化器5000㎡，16家初创入驻", "contact": "—", "activity": "有", "contacted": "✅ 已接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "漕河泾国际孵化中心", "cat": "孵化器", "level": 1, "lng": 121.405356, "lat": 31.164644, "area": "徐汇/闵行漕河泾开发区", "operator": "临港集团（国资）", "focus": "AI/生命健康（正转型）", "scale": "逾20万㎡创业基地，AI企业500+", "contact": "—", "activity": "定期路演", "contacted": "✅ 已接触", "coop": "", "geo_src": "poi", "website": "http://www.caohejing.com"}, {"city": "上海", "name": "模速空间OPC超级创业者社区", "cat": "OPC", "level": 1, "lng": 121.407975, "lat": 31.169925, "area": "徐汇滨江（模速空间内）", "operator": "国资", "focus": "AI/大模型", "scale": "运营中", "contact": "—", "activity": "", "contacted": "✅ 已接触（随模速空间）", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "零界魔方", "cat": "孵化器", "level": 1, "lng": 121.910661, "lat": 30.867304, "area": "临港新片区（创新魔坊三期）", "operator": "临港集团（国资）", "focus": "硬核科技/数字出海/文创", "scale": "一期满租，180+项目、730+人；二期新增约3万㎡+200套人才公寓", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "漕河泾开发区", "cat": "园区", "level": 1, "lng": 121.395178, "lat": 31.160454, "area": "徐汇/闵行", "operator": "临港集团（国资）", "focus": "", "scale": "逾20万㎡创业基地；1.5万+家高科技企业；AI企业500+", "contact": "—", "activity": "", "contacted": "✅ 已接触", "coop": "", "geo_src": "geocode", "website": "http://www.caohejing.com"}, {"city": "上海", "name": "大零号湾", "cat": "孵化器", "level": 1, "lng": 121.421768, "lat": 31.026233, "area": "闵行区", "operator": "交大+闵行区+上海地产（高校/国资）", "focus": "", "scale": "交大科技园11.4万㎡；规划累计200万㎡", "contact": "沧源路1160号", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "漕河泾科技创业中心", "cat": "孵化器", "level": 1, "lng": 121.405364, "lat": 31.164308, "area": "徐汇/闵行", "operator": "漕河泾科技创业中心有限公司", "focus": "信息、生物医药、新材料", "scale": "7万㎡；国家级；孵化成功率超93%", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "poi", "website": "http://www.caohejing.com"}, {"city": "上海", "name": "漕河泾留学人员创业园", "cat": "孵化器", "level": 1, "lng": 121.416405, "lat": 31.16791, "area": "徐汇", "operator": "同上", "focus": "电子信息", "scale": "全国创业孵化示范基地", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "poi", "website": "http://www.caohejing.com"}, {"city": "上海", "name": "启迪漕河泾智能制造孵化器", "cat": "孵化器", "level": 1, "lng": 121.405356, "lat": 31.164644, "area": "松江", "operator": "启迪漕河泾（上海）", "focus": "智能制造", "scale": "国家级", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "poi", "website": "https://www.tusstar.com"}, {"city": "上海", "name": "双创园（漕河泾闵行园）", "cat": "孵化器", "level": 1, "lng": 121.473667, "lat": 31.230525, "area": "", "operator": "漕河泾开发区创新创业园发展有限公司", "focus": "综合", "scale": "市级", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "geocode", "website": "http://www.caohejing.com"}, {"city": "上海", "name": "漕河泾智巷众创空间", "cat": "孵化器", "level": 1, "lng": 121.40351, "lat": 31.172363, "area": "松江赵巷", "operator": "漕河泾科技创业中心", "focus": "", "scale": "", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "geocode", "website": "https://www.caohejing.com"}, {"city": "上海", "name": "漕河泾开发区/漕河泾国际孵化中心", "cat": "园区", "level": 1, "lng": 121.395178, "lat": 31.160454, "area": "", "operator": "", "focus": "1.5万家企业，AI企业500+，孵化器3.0模式", "scale": "", "contact": "", "activity": "", "contacted": "✅ 已接触", "coop": "平台级合作", "geo_src": "geocode", "website": "https://www.caohejing.com"}, {"city": "上海", "name": "张江人工智能创新小镇", "cat": "园区", "level": 1, "lng": 121.615525, "lat": 31.183775, "area": "", "operator": "", "focus": "2025年9月启幕，2平方公里，70万㎡，首批20家企业，目标500+家", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "平台级合作/入驻合作", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "零界魔方（临港OPC）", "cat": "OPC", "level": 1, "lng": 121.910661, "lat": 30.867304, "area": "", "operator": "", "focus": "180+项目，硬科技+数字出海", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "参加活动/项目对接", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "'大零号湾'科创策源孵化器", "cat": "孵化器", "level": 1, "lng": 121.423825, "lat": 31.025125, "area": "", "operator": "", "focus": "高质量孵化器，电子信息与先进装备", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "联合路演/项目互推", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "大零号湾·源创加速营", "cat": "加速器", "level": 1, "lng": 121.421768, "lat": 31.026233, "area": "", "operator": "", "focus": "闵行，2026年启动，硬科技三个月实战陪跑", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "联合活动/项目互推", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "亲橙超级创业者社区", "cat": "OPC", "level": 2, "lng": 121.491552, "lat": 31.217087, "area": "徐汇滨江（阿里巴巴园区）", "operator": "阿里巴巴共建（民营）", "focus": "AI+", "scale": "入驻率97.5%，200+创业者，AI+方向超70%", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "可灵AI+创作者生态集聚社区", "cat": "园区", "level": 2, "lng": 121.401094, "lat": 31.163692, "area": "徐汇漕河泾星联科技园", "operator": "快手可灵共建", "focus": "AI创作", "scale": "2025年1月启动，16家入驻", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "浦软孵化器", "cat": "孵化器", "level": 2, "lng": 121.602783, "lat": 31.200958, "area": "浦东张江博霞路22号", "operator": "中国电子CEC旗下（国资）", "focus": "TMT/软件", "scale": "亚洲最佳孵化器", "contact": "021-61002060；hr@spspvc.com.cn", "activity": "—", "contacted": "✅已接触", "coop": "", "geo_src": "geocode", "website": "https://spspvc.com.cn"}, {"city": "上海", "name": "苏河汇", "cat": "孵化器", "level": 2, "lng": 121.358797, "lat": 31.220173, "area": "长宁区金钟路633号晨讯科技大楼A栋4-6F", "operator": "民营（新三板834401）", "focus": "综合", "scale": "13个基地，2万+㎡", "contact": "13301626191", "activity": "定期活动", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.suhehui.com"}, {"city": "上海", "name": "起点创业营", "cat": "孵化器", "level": 2, "lng": 121.519647, "lat": 31.299067, "area": "闵行区莘松路380号6楼", "operator": "民营（查立/薛村禾/软银中国联合发起）", "focus": "综合/TMT", "scale": "—", "contact": "021-52965210", "activity": "创业营活动", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "COCOSPACE", "cat": "孵化器", "level": 2, "lng": 121.608177, "lat": 31.130728, "area": "浦东新区", "operator": "可可空间投资（民营）", "focus": "综合", "scale": "—", "contact": "021-60893288", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "http://www.cocospace.com.cn"}, {"city": "上海", "name": "麦腾创业天地", "cat": "孵化器", "level": 2, "lng": 121.383304, "lat": 31.272972, "area": "普陀区真南路822弄129号", "operator": "民营", "focus": "互联网/科技综合", "scale": "累计孵化300+企业", "contact": "www.mytechchina.com", "activity": "定期活动", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.mytechchina.com"}, {"city": "上海", "name": "小马创业村", "cat": "孵化器", "level": 2, "lng": 121.482405, "lat": 31.251109, "area": "虹口区武进路456号；青浦区诸光路1588弄", "operator": "铂泉资本旗下（民营）", "focus": "科技综合", "scale": "多园区布局", "contact": "021-56481650；vason@boquancapital.com", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "启迪之星（上海）", "cat": "孵化器", "level": 2, "lng": 121.533601, "lat": 31.27101, "area": "杨浦区长阳路1687号7号楼", "operator": "清华系（混合）", "focus": "在线新经济", "scale": "国家级孵化器", "contact": "13381727927", "activity": "有", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "https://www.tusstar.com"}, {"city": "上海", "name": "正泰智电港孵化器", "cat": "孵化器", "level": 1, "lng": 121.162492, "lat": 31.019841, "area": "松江经开区", "operator": "正泰启迪（上海）", "focus": "高端制造、集成电路", "scale": "总投资200亿元，占地1010亩", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "poi", "website": "http://www.siad-c.com"}, {"city": "上海", "name": "交大\"一公里孵化器\"", "cat": "孵化器", "level": 1, "lng": 121.420829, "lat": 31.027903, "area": "闵行·大零号湾", "operator": "上海交大", "focus": "硬科技", "scale": "累计孵化42家企业，4家估值过亿", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "虹橙OPC社区", "cat": "OPC", "level": 2, "lng": 121.313751, "lat": 31.205383, "area": "闵行大虹桥", "operator": "阿里共建（民营）", "focus": "跨境电商/出海", "scale": "运营中", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "紫竹国家高新区", "cat": "园区", "level": 2, "lng": 121.464692, "lat": 31.01897, "area": "闵行区南部", "operator": "闵行区+交大+紫江集团（混合）", "focus": "", "scale": "13平方公里", "contact": "孵化器：021-60919528；创业中心：021-61212765；yiyi@zizhupark.com", "activity": "", "contacted": "✅ 已接触", "coop": "", "geo_src": "poi", "website": "https://www.zizhupark.com"}, {"city": "上海", "name": "张江科学城", "cat": "园区", "level": 2, "lng": 121.544346, "lat": 31.221461, "area": "浦东新区", "operator": "国资", "focus": "", "scale": "创新创业载体163家（107家孵化器+56家大企业开放创新中心）；在孵企业近2500家", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "临港松江科技城/G60科创走廊", "cat": "园区", "level": 2, "lng": 121.321326, "lat": 31.094224, "area": "松江区", "operator": "临港集团（国资）", "focus": "", "scale": "核心区3000亩，总建筑面积约350万㎡", "contact": "陈老师 021-38298176；莘砖公路239号", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "创智天地", "cat": "园区", "level": 2, "lng": 121.51302, "lat": 31.306068, "area": "杨浦区五角场", "operator": "瑞安房地产+杨浦区（混合）", "focus": "", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "智慧湾科创园", "cat": "园区", "level": 2, "lng": 121.433505, "lat": 31.344243, "area": "宝山区", "operator": "国资", "focus": "", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "上海", "name": "上海湾区科创中心", "cat": "园区", "level": 2, "lng": 121.359185, "lat": 30.75053, "area": "金山区山阳镇", "operator": "国资", "focus": "", "scale": "约2平方公里", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "上海", "name": "复旦科技园", "cat": "园区", "level": 2, "lng": 121.508061, "lat": 31.287842, "area": "杨浦（主园区10万㎡）；虹口（2万㎡）", "operator": "高校", "focus": "", "scale": "总运营载体30万㎡，600个灵活工位", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "manual", "website": "https://www.fudanusp.com"}, {"city": "上海", "name": "上海交大科技园", "cat": "园区", "level": 2, "lng": 121.420829, "lat": 31.027903, "area": "闵行/大零号湾", "operator": "高校/国资", "focus": "", "scale": "11.4万㎡（大零号湾内）", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": "http://www.sjtusp.com"}, {"city": "上海", "name": "慧谷创业中心", "cat": "园区", "level": 2, "lng": 121.380857, "lat": 31.112834, "area": "闵行（交大园内）", "operator": "上海交大科技园", "focus": "综合", "scale": "国家级创业孵化示范基地A级", "contact": "", "activity": "", "contacted": "", "coop": "", "geo_src": "geocode", "website": "http://www.withub.org"}, {"city": "深圳", "name": "深圳科创学院（InnoX）", "cat": "加速器", "level": 1, "lng": 113.939828, "lat": 22.578449, "area": "南山区创智云城2期C1栋", "operator": "民营（李泽湘教授团队）", "focus": "硬科技/智能终端（机器人、智能家居、出行）", "scale": "累计孵化200+家；提供50万-500万启动资金", "contact": "0755-89933366；wan.ch@innoxsz.edu.cn", "activity": "NexTech加速计划、科创营（长期滚动招募）", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": "https://www.innoxsz.com"}, {"city": "深圳", "name": "天使荟·千模应用加速器", "cat": "OPC", "level": 1, "lng": 114.084775, "lat": 22.539875, "area": "福田区深圳新一代产业园", "operator": "国资（深圳天使投资引导基金+福田区政府）", "focus": "AI/千模应用（集成电路、智能硬件）", "scale": "2.2万㎡；累计引进73家，AI企业44家；整体估值323亿元", "contact": "—", "activity": "\"金种子\"联创实训营（累计104项目）；每周走访", "contacted": "接触过", "coop": "", "geo_src": "poi", "website": "https://www.tsfof.com"}, {"city": "深圳", "name": "深圳科创学院（InnoX）力合科创体系", "cat": "孵化器", "level": 1, "lng": 113.940712, "lat": 22.578253, "area": "南山区清华信息港", "operator": "民营/高校（力合科创集团）", "focus": "新一代信息技术、AI、生命科学", "scale": "占地4万㎡，建筑13.8万㎡；累计孵化713家；上市/挂牌27家", "contact": "—", "activity": "有", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.innoxsz.com"}, {"city": "深圳", "name": "天使荟", "cat": "孵化器", "level": 1, "lng": 114.084775, "lat": 22.539875, "area": "福田区新一代产业园", "operator": "深圳天使投资引导基金+福田区（国资）", "focus": "AI创业+千模应用", "scale": "2.2万㎡；73家企业，AI企业44家", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "poi", "website": "https://www.tsfof.com"}, {"city": "深圳", "name": "模力营AI生态社区", "cat": "OPC", "level": 1, "lng": 113.919524, "lat": 22.496283, "area": "南山区留仙洞云科技大厦", "operator": "南山区+力合科创（国资/民营）", "focus": "AI大模型/具身智能", "scale": "10万㎡；140+企业", "contact": "—", "activity": "每批次公布入驻名单", "contacted": "已接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "大公坊AI硬件OPC·hub", "cat": "OPC", "level": 1, "lng": 113.993124, "lat": 22.53765, "area": "宝安区航城创新创业园", "operator": "大公坊iMakerbase（民营）", "focus": "AI硬件/快速打样", "scale": "\"3天出样机\"", "contact": "CEO丁春发", "activity": "每周路演/工作坊", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://imakerbase.com"}, {"city": "深圳", "name": "创投·模力谷AI生态社区", "cat": "OPC", "level": 1, "lng": 114.215414, "lat": 22.721472, "area": "龙岗区创投大厦", "operator": "龙岗区+中国科技开发院（国资/混合）", "focus": "AI全产业", "scale": "11.7万㎡", "contact": "创投大厦A402", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "前海深港青年梦工场", "cat": "孵化器", "level": 1, "lng": 113.900788, "lat": 22.518796, "area": "前海合作区梦海大道5188号", "operator": "前海产发集团（国资）", "focus": "跨境创新/港澳青年", "scale": "一期4.7万㎡+二期14.4万㎡；累计孵化1374家，在园633家；融资超42亿", "contact": "0755-88986000；service@qhidg.com", "activity": "持续遴选+路演", "contacted": "接触过", "coop": "", "geo_src": "poi", "website": "https://www.ehub.hk.cn"}, {"city": "深圳", "name": "深圳湾创业广场", "cat": "孵化器", "level": 1, "lng": 113.93673, "lat": 22.52377, "area": "南山区学府路", "operator": "深圳市投资控股有限公司（国资）", "focus": "", "scale": "贯穿18栋写字楼，约3.6-5万㎡", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.szbay.com"}, {"city": "深圳", "name": "银星科技园", "cat": "园区", "level": 1, "lng": 114.045707, "lat": 22.725179, "area": "龙华区观澜", "operator": "银星投资集团（民营）", "focus": "", "scale": "占地50万㎡/运营80万㎡；600+优质企业", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "manual", "website": ""}, {"city": "深圳", "name": "中科创客学院", "cat": "孵化器", "level": 1, "lng": 114.005475, "lat": 22.595625, "area": "", "operator": "中科院深圳先进院+深创投（国资）", "focus": "\"从蝌蚪到青蛙\"一站式育成", "scale": "", "contact": "官网：makercas.com", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "银星科技园（含银星分园）", "cat": "园区", "level": 1, "lng": 114.045707, "lat": 22.725179, "area": "", "operator": "银星投资集团（民营）", "focus": "占地50万㎡/运营80万㎡，600+企业，连续A类", "scale": "", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "创投·模力谷", "cat": "园区", "level": 1, "lng": 114.215417, "lat": 22.721117, "area": "", "operator": "", "focus": "龙岗最大AI聚集，11.7万㎡", "scale": "", "contact": "", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "南山深港青年创新创业基地", "cat": "孵化器", "level": 1, "lng": 114.248167, "lat": 22.56171, "area": "", "operator": "", "focus": "免费入驻，早期项目多", "scale": "", "contact": "", "activity": "", "contacted": "接触过", "coop": "需线下建联负责人", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "璞跃中国大湾区国际创新中心（Plug and Play）", "cat": "OPC", "level": 1, "lng": 114.131646, "lat": 22.54661, "area": "罗湖区凤凰路199号仁恒深之源三楼", "operator": "外资（美国Plug and Play）", "focus": "智能硬件、场景应用、金融科技、AI", "scale": "2000㎡；意向入驻150+家", "contact": "郭先生 18701681622；总经理叶飞", "activity": "120天孵化计划、OPC开放日、大企业对接", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": "https://www.pnpchina.com"}, {"city": "深圳", "name": "深圳北站港澳青年创新创业中心", "cat": "OPC", "level": 2, "lng": 114.03114, "lat": 22.613292, "area": "龙华区汇德大厦12-13层", "operator": "龙华区政府（国资）", "focus": "港澳AI青年创业", "scale": "4240-6600㎡", "contact": "汇德大厦12层", "activity": "—", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "软硬蜂巢", "cat": "加速器", "level": 1, "lng": 113.930478, "lat": 22.533191, "area": "南山区", "operator": "民营", "focus": "智能硬件、机器人、IoT、生物科技", "scale": "—", "contact": "—", "activity": "柔性制造服务、产品化加速", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "坪山AI未来营", "cat": "孵化器", "level": 2, "lng": 114.388546, "lat": 22.714131, "area": "坪山区坪山高新区", "operator": "坪山区政府（国资）", "focus": "AI创新", "scale": "超1万㎡", "contact": "—", "activity": "", "contacted": "接触过", "coop": "需线下建联负责人", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "天安云谷OPC社区", "cat": "OPC", "level": 2, "lng": 114.127875, "lat": 22.65855, "area": "龙岗区坂雪岗科技城", "operator": "天安骏业（民营）", "focus": "AI赋能", "scale": "600+高新企业聚集；首批10-15工位", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "poi", "website": "https://www.szyungu.com"}, {"city": "深圳", "name": "河套Inno Link创享孵化器", "cat": "孵化器", "level": 1, "lng": 114.105022, "lat": 22.560395, "area": "福田区河套合作区", "operator": "深圳深港科技创新合作区发展有限公司（国资）", "focus": "芯片/高端装备材料", "scale": "—", "contact": "—", "activity": "专题路演", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.sh-stic.com"}, {"city": "深圳", "name": "坝光生物家园", "cat": "孵化器", "level": 2, "lng": 114.491183, "lat": 22.534044, "area": "大鹏坝光", "operator": "国资", "focus": "基因治疗、AI制药", "scale": "占地4.4万㎡/建筑13.9万㎡/投资近10亿", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "全至科技创新园", "cat": "孵化器", "level": 1, "lng": 113.822085, "lat": 22.765039, "area": "宝安区沙井", "operator": "民营", "focus": "机器人/智能装备", "scale": "国家级；全国首个\"工业上楼\"模式", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "manual", "website": ""}, {"city": "深圳", "name": "中粮（福安）机器人智造产业园", "cat": "园区", "level": 1, "lng": 113.815325, "lat": 22.693325, "area": "宝安区", "operator": "国企", "focus": "机器人/智造", "scale": "国家级", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "π创空间（OPC场景应用创新谷）", "cat": "OPC", "level": 2, "lng": 114.134132, "lat": 22.577411, "area": "罗湖区笋清片区", "operator": "罗湖投控+蒲公英孵化器共建（国资）", "focus": "AI场景应用+鸿蒙生态", "scale": "1.6万㎡", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "光引擎·人工智能创想空间", "cat": "孵化器", "level": 1, "lng": 114.025882, "lat": 22.532338, "area": "光明区凤凰城片区", "operator": "光明区政府（国资）", "focus": "AI创想", "scale": "超1万㎡", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "粤港澳青年创新创业工场（福田）", "cat": "孵化器", "level": 2, "lng": 114.056112, "lat": 22.506719, "area": "福田保税区长富金茂大厦/深港协同创新中心", "operator": "深港科技合作促进会（国资）", "focus": "港澳青年创业", "scale": "入驻23家，超半数盈利", "contact": "—", "activity": "—", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "深港青年创新创业基地（南山）", "cat": "孵化器", "level": 2, "lng": 114.005376, "lat": 22.595633, "area": "南山区学苑大道1001号南山智园C2栋16-19楼", "operator": "南山区政府（国资）", "focus": "港澳青年创业", "scale": "6000㎡；免租金/水电/物业", "contact": "0755-86967125/86561805；ihub@szns.gov.cn", "activity": "—", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "坪山生物医药产业加速器（一期）", "cat": "加速器", "level": 2, "lng": 114.407979, "lat": 22.73571, "area": "坪山区", "operator": "国资", "focus": "生物医药/医疗器械", "scale": "国家级", "contact": "0755-23908839", "activity": "—", "contacted": "接触过", "coop": "", "geo_src": "manual", "website": ""}, {"city": "深圳", "name": "坪山生物医药加速器（二期）", "cat": "加速器", "level": 2, "lng": 114.4058, "lat": 22.739039, "area": "坪山区", "operator": "国资", "focus": "生物医药", "scale": "占地10.6万㎡/建筑68.95万㎡/12栋", "contact": "—", "activity": "—", "contacted": "接触过", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "HAX（SOSV）", "cat": "加速器", "level": 2, "lng": 114.260587, "lat": 22.731653, "area": "福田区华强北", "operator": "外资（美国SOSV风投）", "focus": "深科技/硬件", "scale": "主基地已迁至美国；深圳保留供应链功能", "contact": "makeit@haxlr8r.com", "activity": "注：深圳功能已缩减", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://hax.co"}, {"city": "深圳", "name": "璞跃创新中心", "cat": "孵化器", "level": 2, "lng": 114.131454, "lat": 22.546445, "area": "罗湖区凤凰路199号", "operator": "Plug and Play China（外资）", "focus": "国际化跨境创新", "scale": "2.1万㎡", "contact": "郭先生 18701681622", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": "https://www.pnpchina.com"}, {"city": "深圳", "name": "星河WORLD OPC社区", "cat": "OPC", "level": 2, "lng": 114.066227, "lat": 22.607185, "area": "龙岗区坂田雅宝路8号", "operator": "星河集团（民营）", "focus": "综合产业链", "scale": "含国家级科技孵化器", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": "https://www.galaxyind.cn"}, {"city": "深圳", "name": "乐荟中心OPC社区", "cat": "OPC", "level": 2, "lng": 114.078268, "lat": 22.639978, "area": "龙岗区坂田片区", "operator": "—", "focus": "—", "scale": "—", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "poi", "website": "https://lehuizhongxin.cn"}, {"city": "深圳", "name": "孔雀谷深港科创育成基地", "cat": "园区", "level": 2, "lng": 114.056326, "lat": 22.506318, "area": "福田保税区长富金茂大厦13楼", "operator": "福田国家高技术产业创新中心（国资）", "focus": "深港科创", "scale": "市级孵化器", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "龙华区粤港澳青年创新创业服务中心", "cat": "孵化器", "level": 2, "lng": 114.04491, "lat": 22.696735, "area": "龙华观澜街道艺工场5栋4楼", "operator": "龙华区政府（国资）", "focus": "港澳青年", "scale": "—", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "深圳高新区生物孵化器", "cat": "园区", "level": 2, "lng": 113.940306, "lat": 22.550513, "area": "南山区", "operator": "深圳软件园管理中心（国资）", "focus": "生物医药", "scale": "国家级", "contact": "—", "activity": "—", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "金荣达产业园OPC社区", "cat": "OPC", "level": 2, "lng": 114.061657, "lat": 22.663991, "area": "龙岗区坂田片区", "operator": "—", "focus": "—", "scale": "—", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "南山智园", "cat": "园区", "level": 2, "lng": 114.004646, "lat": 22.593866, "area": "南山区学苑大道1001号", "operator": "国资", "focus": "", "scale": "面积65.79万㎡，入驻86家企业（含6家上市公司）", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "星河WORLD", "cat": "园区", "level": 2, "lng": 114.066227, "lat": 22.607185, "area": "龙岗区坂田雅宝路8号", "operator": "星河集团（民营）", "focus": "", "scale": "\"众创空间-孵化器-加速器-总部基地\"全链条", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": "https://www.galaxyind.cn"}, {"city": "深圳", "name": "天安云谷", "cat": "园区", "level": 2, "lng": 114.058, "lat": 22.686, "area": "龙岗区坂雪岗科技城", "operator": "天安骏业（民营）", "focus": "", "scale": "600+高新企业", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "manual", "website": "https://www.szyungu.com"}, {"city": "深圳", "name": "光明科学城", "cat": "园区", "level": 2, "lng": 113.964638, "lat": 22.809612, "area": "光明区", "operator": "国资", "focus": "", "scale": "23个重大科创载体；院士59人；高层次人才超3000人", "contact": "—", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "清华信息港科技企业孵化器", "cat": "孵化器", "level": 2, "lng": 113.946818, "lat": 22.553397, "area": "南山区科技园北区松坪山", "operator": "力合科创集团（民营/高校）", "focus": "", "scale": "占地4万㎡，建筑13.8万㎡；累计孵化713家；上市27家", "contact": "—", "activity": "", "contacted": "接触过", "coop": "需线下建联负责人", "geo_src": "poi", "website": "https://www.leaguer.com.cn"}, {"city": "深圳", "name": "中国科学院深圳先进技术研究院", "cat": "孵化器", "level": 2, "lng": 113.990799, "lat": 22.595606, "area": "南山区学苑大道1068号", "operator": "国资/科研", "focus": "", "scale": "市级；\"楼上楼下\"模式", "contact": "0755-86392288；info@siat.ac.cn", "activity": "", "contacted": "接触过", "coop": "", "geo_src": "geocode", "website": "https://www.siat.ac.cn"}, {"city": "深圳", "name": "深圳清华大学研究院", "cat": "孵化器", "level": 2, "lng": 113.942829, "lat": 22.528275, "area": "南山区", "operator": "高校", "focus": "", "scale": "市级", "contact": "—", "activity": "", "contacted": "接触过", "coop": "直接推进", "geo_src": "poi", "website": "https://www.tsinghua-sz.org"}, {"city": "深圳", "name": "深圳湾科技生态园", "cat": "园区", "level": 2, "lng": 113.952743, "lat": 22.530351, "area": "南山区", "operator": "国资", "focus": "", "scale": "入驻700+企业（含6家世界500强旗下企业）", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "https://www.szbay.com"}, {"city": "深圳", "name": "河套深港科技创新合作区", "cat": "孵化器", "level": 2, "lng": 113.944097, "lat": 22.533265, "area": "福田区", "operator": "国资", "focus": "", "scale": "3.89平方公里（深圳园区3.02km²）；5个孵化器面积2万㎡", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "深圳虚拟大学园孵化器", "cat": "孵化器", "level": 2, "lng": 113.944976, "lat": 22.535663, "area": "南山区高新区南区", "operator": "深圳虚拟大学园管理服务中心（国资）", "focus": "", "scale": "国家级；2001年成立", "contact": "0755-26551610", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}, {"city": "深圳", "name": "深港产学研基地", "cat": "孵化器", "level": 2, "lng": 113.944501, "lat": 22.533612, "area": "南山区", "operator": "国资/高校", "focus": "", "scale": "国家级", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": "http://www.ier.org.cn"}, {"city": "深圳", "name": "深圳硅谷大学城创业园", "cat": "园区", "level": 2, "lng": 113.965036, "lat": 22.58893, "area": "南山区", "operator": "硅谷大学城创业园管理有限公司", "focus": "", "scale": "国家级", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "poi", "website": ""}, {"city": "深圳", "name": "南方科技大学科学园孵化器", "cat": "孵化器", "level": 2, "lng": 114.002365, "lat": 22.599631, "area": "南山区", "operator": "高校", "focus": "", "scale": "市级", "contact": "—", "activity": "", "contacted": "❌ 未接触", "coop": "", "geo_src": "geocode", "website": ""}];
+const CITY_VIEW = {"北京": {"center": [116.397, 39.95], "zoom": 11}, "上海": {"center": [121.47, 31.22], "zoom": 11}, "深圳": {"center": [114.06, 22.62], "zoom": 11}};
+let map, curCity='北京', markers=[], cards={}, curSel=null, infoWin=null;
+
+// 灰色底图样式
+const GRAY_STYLE='amap://styles/whitesmoke';
+
+function catIcon(cat){
+  return ({'园区':'▤','孵化器':'⬢','加速器':'▲','OPC':'◆','奇绩':'★'})[cat]||'⬢';
+}
+function levelClass(lv){ return lv===0?'qiji':(lv===1?'key':'normal'); }
+function badgeText(r){ return r.level===0?'奇绩':(r.level===1?'重点':'普通'); }
+
+AMapLoader.load({key:"9f7f60b1af7923dcf5fa51ab37840e02",version:"2.0",plugins:["AMap.InfoWindow","AMap.ToolBar","AMap.Scale"]})
+.then((AMap)=>{
+  map=new AMap.Map("map",{
+    mapStyle:GRAY_STYLE, zoom:CITY_VIEW[curCity].zoom, center:CITY_VIEW[curCity].center,
+    viewMode:'2D', showLabel:true, features:['bg','road','building'], // 关闭POI点默认标注减少杂乱
+    zooms:[3,20],
+    zoomEnable:true, dragEnable:true, scrollWheel:true, doubleClickZoom:true,
+    keyboardEnable:true, touchZoom:true, touchZoomCenter:1, pinchToZoom:true, jogEnable:true
+  });
+  // 缩放/比例尺控件（放在右侧信息面板左边，避免被面板遮住）
+  map.addControl(new AMap.ToolBar({position:{right:'326px',bottom:'26px'}}));
+  map.addControl(new AMap.Scale({position:'LB'}));
+  infoWin=new AMap.InfoWindow({offset:new AMap.Pixel(0,-30),isCustom:false});
+  bindTabs(AMap);
+  render(AMap, curCity);
+}).catch(e=>{
+  document.getElementById('map').innerHTML='<div style="padding:40px;color:var(--text)">地图加载失败：'+e+'</div>';
+});
+
+function bindTabs(AMap){
+  const tabs=document.querySelectorAll('#cityTabs button');
+  tabs.forEach(b=>{
+    b.classList.toggle('active', b.dataset.city===curCity);
+    b.onclick=()=>{
+      curCity=b.dataset.city;
+      tabs.forEach(x=>x.classList.toggle('active',x.dataset.city===curCity));
+      const v=CITY_VIEW[curCity];
+      map.setZoomAndCenter(v.zoom, v.center);
+      render(AMap, curCity);
+    };
+  });
+}
+
+function clearMarkers(){ markers.forEach(m=>map.remove(m)); markers=[]; cards={}; curSel=null; if(infoWin)infoWin.close(); }
+
+function render(AMap, city){
+  clearMarkers();
+  const list=RAW.filter(r=>r.city===city);
+  // 重点在上，普通在下，奇绩最上
+  list.sort((a,b)=>a.level-b.level);
+  list.forEach((r,idx)=>{
+    r._id=city+'#'+idx;
+    const lc=levelClass(r.level);
+    const el=document.createElement('div');
+    el.className='mk '+lc;
+    {
+      const ic = r.level===0?'★':catIcon(r.cat);
+      const nm = r.level===2?shortName(r.name,8):shortName(r.name);
+      el.innerHTML='<div class="pin"><span class="ic">'+ic+'</span>'+escapeHtml(nm)+'</div><span class="arrow"></span>';
+    }
+    const mk=new AMap.Marker({
+      position:[r.lng,r.lat], content:el, anchor:'bottom-center',
+      offset:new AMap.Pixel(0,0), zIndex: r.level===0?300:(r.level===1?200:100)
+    });
+    mk._el=el; mk._level=r.level;
+    mk.on('click',()=>openDetail(r));
+    map.add(mk); markers.push(mk);
+  });
+  buildPanel(city, list);
+  // 首次渲染后错开重叠标牌，并绑定缩放/平移后重算
+  setTimeout(()=>resolveOverlap(AMap), 60);
+  if(!map._overlapBound){
+    map._overlapBound=true;
+    map.on('zoomend', ()=>setTimeout(()=>resolveOverlap(AMap),40));
+    map.on('moveend', ()=>setTimeout(()=>resolveOverlap(AMap),40));
+  }
+}
+
+// 标牌防重叠：按屏幕像素检测矩形碰撞，低优先级标牌垂直上移错开
+function resolveOverlap(AMap){
+  if(!markers.length) return;
+  // 先全部复位
+  markers.forEach(m=>m.setOffset(new AMap.Pixel(0,0)));
+  // 优先级：奇绩(0)/重点(1) 先占位不动，普通(2) 让路；同级按当前顺序
+  const items=markers.map(m=>{
+    const el=m._el;
+    const w=(el&&el.offsetWidth)||90, h=(el&&el.offsetHeight)||24;
+    const px=map.lngLatToContainer(m.getPosition());
+    return {m, level:m._level, w, h, cx:px.x, top:px.y - h, bottom:px.y};
+  }).sort((a,b)=>a.level-b.level);
+  const placed=[];
+  const PAD=2;
+  items.forEach(it=>{
+    let dy=0, tries=0;
+    // 生成候选矩形（bottom-center 锚点）
+    const rectOf=(offY)=>({l:it.cx-it.w/2, r:it.cx+it.w/2, t:it.top+offY, b:it.bottom+offY});
+    const hit=(A)=>placed.some(B=> !(A.r<B.l-PAD||A.l>B.r+PAD||A.b<B.t-PAD||A.t>B.b+PAD));
+    let rect=rectOf(0);
+    // 逐步向上抬升，直到不重叠或超过上限
+    while(hit(rect) && tries<14){ dy-=(it.h+3); rect=rectOf(dy); tries++; }
+    if(dy!==0) it.m.setOffset(new AMap.Pixel(0,dy));
+    placed.push(rect);
+  });
+}
+
+function shortName(n,max){
+  max=max||10;
+  n=n.replace(/（[^）]*）/g,'').replace(/\([^)]*\)/g,'');
+  n=n.split(/[\/／]/)[0];
+  return n.length>max?n.slice(0,max)+'…':n;
+}
+function escapeHtml(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function detailHtml(r){
+  const badgeCls=levelClass(r.level);
+  let h='<div class="iw">';
+  h+='<div class="iw-h">'+(r.level===0?'★ ':'')+escapeHtml(r.name)+'</div>';
+  h+='<div style="margin-bottom:5px"><span class="iw-tag" style="background:'+tagColor(r.level)+'">'+badgeText(r)+'</span>';
+  h+='<span class="iw-tag" style="background:#64748b">'+escapeHtml(r.cat)+'</span></div>';
+  const rows=[['所在',r.area],['运营/背景',r.operator],['聚焦方向',r.focus],['规模/项目',r.scale],['定期活动',r.activity],['联系方式',r.contact],['与奇绩',r.coop&&r.coop!=='—'?r.coop:''],['接触状态',r.contacted&&!['本部'].includes(r.contacted)?r.contacted:'']];
+  rows.forEach(([k,v])=>{ if(v&&v.trim()&&v!=='—') h+='<div class="iw-row"><b>'+k+'：</b>'+escapeHtml(v)+'</div>'; });
+  if(r.website&&r.website.trim()){
+    const u=escapeHtml(r.website.trim());
+    const disp=r.website.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
+    h+='<div class="iw-row"><b>官网：</b><a href="'+u+'" target="_blank" rel="noopener" style="color:#1d4ed8;text-decoration:underline;word-break:break-all">'+escapeHtml(disp)+'</a></div>';
+  }
+  h+='</div>';
+  return h;
+}
+function tagColor(lv){ return lv===0?'#1d4ed8':(lv===1?'#e4572e':'#8a94a6'); }
+
+function openDetail(r){
+  infoWin.setContent(detailHtml(r));
+  infoWin.open(map,[r.lng,r.lat]);
+  map.panTo([r.lng,r.lat]);
+  selectCard(r._id);
+}
+
+function buildPanel(city,list){
+  document.getElementById('panelTitle').textContent=city;
+  const key=list.filter(r=>r.level===1).length, qj=list.filter(r=>r.level===0).length, nm=list.filter(r=>r.level===2).length;
+  document.getElementById('panelDesc').textContent='共 '+list.length+' 个物理载体';
+  document.getElementById('panelStat').innerHTML=
+    '<span><b>'+qj+'</b> 奇绩</span><span><b>'+key+'</b> 重点</span><span><b>'+nm+'</b> 普通</span>';
+  const body=document.getElementById('panelBody'); body.innerHTML=''; cards={};
+  list.forEach(r=>{
+    const d=document.createElement('div'); d.className='card'; d.dataset.id=r._id;
+    const bc=levelClass(r.level);
+    let meta=[];
+    if(r.focus) meta.push('<b>方向</b> '+escapeHtml(trunc(r.focus,40)));
+    else if(r.scale) meta.push('<b>规模</b> '+escapeHtml(trunc(r.scale,40)));
+    if(r.area) meta.push('<b>地址</b> '+escapeHtml(trunc(r.area,26)));
+    d.innerHTML='<div class="cn">'+(r.level===0?'★ ':'')+escapeHtml(r.name)+
+      '<span class="badge '+bc+'">'+badgeText(r)+'</span>'+
+      '<span class="tag">'+escapeHtml(r.cat)+'</span></div>'+
+      (meta.length?'<div class="meta">'+meta.join('<br>')+'</div>':'')+
+      (r.website&&r.website.trim()?'<div class="meta"><a href="'+escapeHtml(r.website.trim())+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#1d4ed8;text-decoration:none">🔗 官网</a></div>':'');
+    d.onclick=()=>openDetail(r);
+    body.appendChild(d); cards[r._id]=d;
+  });
+}
+function trunc(s,n){s=s||'';return s.length>n?s.slice(0,n)+'…':s;}
+function selectCard(id){
+  if(curSel&&cards[curSel])cards[curSel].classList.remove('sel');
+  curSel=id;
+  const c=cards[id]; if(c){c.classList.add('sel'); c.scrollIntoView({block:'nearest',behavior:'smooth'});}
+}
+</script>
+</body>
+</html>
